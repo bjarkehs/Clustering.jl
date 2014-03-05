@@ -6,7 +6,7 @@
 function accumulate_cols!(
 	r::AbstractMatrix,    # destination
 	rw::AbstractArray,    # accumulated weights
-	x::AbstractMatrix,    # source 
+	x::AbstractMatrix,    # source
 	c::AbstractArray)     # assignments (labels)
 
 	d = size(r, 1)
@@ -35,7 +35,7 @@ end
 function accumulate_cols!(
 	r::AbstractMatrix,    # destination
 	rw::AbstractArray,    # accumulated weights
-	x::AbstractMatrix,    # source 
+	x::AbstractMatrix,    # source
 	c::AbstractArray,     # assignments (labels)
 	w::AbstractArray)     # column weights
 
@@ -69,9 +69,9 @@ end
 function accumulate_cols_u!(
 	r::AbstractMatrix,    # destination
 	rw::AbstractArray,    # accumulated weights
-	x::AbstractMatrix,    # source 
+	x::AbstractMatrix,    # source
 	c::AbstractArray,     # assignments (labels)
-	u::AbstractArray{Bool}) # update control     
+	u::AbstractArray{Bool}) # update control
 
 	d = size(r, 1)
 	K = size(r, 2)
@@ -101,7 +101,7 @@ end
 function accumulate_cols_u!(
 	r::AbstractMatrix,    # destination
 	rw::AbstractArray,    # accumulated weights
-	x::AbstractMatrix,    # source 
+	x::AbstractMatrix,    # source
 	c::AbstractArray,     # assignments (labels)
 	w::AbstractArray,     # column weights
 	u::AbstractArray{Bool})  # update control
@@ -120,7 +120,7 @@ function accumulate_cols_u!(
 		if wj > 0
 			@inbounds cj = c[j]
 			1 <= cj <= K || error("assignment out of boundary.")
-			
+
 			if u[cj]
 				rj = view(r, :, cj)
 				xj = view(x, :, j)

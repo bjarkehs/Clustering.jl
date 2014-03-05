@@ -15,9 +15,9 @@ end
 
 function kmeans_opts(;max_iter::Integer=200, tol::Real=1.0e-6, weights=nothing, display::Symbol=:iter)
     KmeansOpts(
-        int(max_iter), 
-        float64(tol), 
-        weights, 
+        int(max_iter),
+        float64(tol),
+        weights,
         display)
 end
 
@@ -120,7 +120,7 @@ function update_centers!{T<:FloatingPoint}(
     n::Int = size(x, 2)
     k::Int = size(centers, 2)
 
-    # initialize center weights 
+    # initialize center weights
     for i = 1 : k
         if to_update[i]
             cweights[i] = 0.
@@ -155,7 +155,7 @@ function update_centers!{T<:FloatingPoint}(
     n::Int = size(x, 2)
     k::Int = size(centers, 2)
 
-    # initialize center weights 
+    # initialize center weights
     for i = 1 : k
         if to_update[i]
             cweights[i] = 0.
@@ -208,7 +208,7 @@ type KmeansResult{T<:FloatingPoint}
     counts::Vector{Int}        # number of samples assigned to each cluster (k)
     cweights::Vector{T}        # cluster weights (k)
     total_cost::Float64        # total cost (i.e. objective) (k)
-    iterations::Int            # number of elapsed iterations 
+    iterations::Int            # number of elapsed iterations
     converged::Bool            # whether the procedure converged
 end
 
