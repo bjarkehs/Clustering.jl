@@ -326,7 +326,8 @@ function dcosts(disArr::DArray, v)
             l=localpart($disArr)
             colwise(SqEuclidean(), $v, l)
         end
-    localvalues=[ @fetchfrom part eval(op) for part in disArr.pmap ]
+    refs = @sync [ @spawnat part eval(op) for part in disArr.pmap ]
+    localvalues = map(take!, refs)
     unite(localvalues)
 end
 
