@@ -11,8 +11,7 @@ pk = @elapsed b = pkmeans(a, seeds)
 
 k = @elapsed c = kmeans(l_a, seeds)
 
-println("Pkmeans Assignments == Kmeans Assignments?")
-println(b.assignments == c.assignments)
+println("Pkmeans Assignments == Kmeans Assignments? $(b.assignments == c.assignments)")
 
 println("Pkmeans duration: $pk")
 println("Kmeans duration: $k")
@@ -26,8 +25,7 @@ pk = @elapsed b = pkmeans(a, seeds)
 
 k = @elapsed c = kmeans(l_a, seeds)
 
-println("Pkmeans Assignments == Kmeans Assignments?")
-println(b.assignments == c.assignments)
+println("Pkmeans Assignments == Kmeans Assignments? $(b.assignments == c.assignments)")
 
 println("Pkmeans duration: $pk")
 println("Kmeans duration: $k")

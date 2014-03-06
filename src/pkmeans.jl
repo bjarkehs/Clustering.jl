@@ -23,12 +23,12 @@ function p_repick_unused_centers{T<:FloatingPoint}(
     end
 end
 
-function local_p_update_centers(x, centers, cweights, range, to_update, assignments)
+function local_p_update_centers(x, centers, cweights, to_update, assignments)
         quote
             l_x = localpart($x)
             l_centers = $centers
             l_cweights = $cweights
-            accumulate_cols_u!(l_centers, l_cweights, l_x, $assignments[$range], $to_update)
+            accumulate_cols_u!(l_centers, l_cweights, l_x, $assignments, $to_update)
             (l_centers, l_cweights)
         end
     end
@@ -59,7 +59,7 @@ function p_update_centers!{T<:FloatingPoint}(
 
 
 
-    results = @sync [ @spawnat part_ids[i] eval(local_p_update_centers(x, centers, cweights, x.indexes[i][2], to_update, assignments)) for i=1:amount_of_procs ]
+    results = @sync [ @spawnat part_ids[i] eval(local_p_update_centers(x, centers, cweights, to_update, assignments[x.indexes[i][2]])) for i=1:amount_of_procs ]
 
     for i=1:length(results)
         tmp_centers[i], tmp_cweights[i,:] = take!(results[i])
@@ -81,21 +81,21 @@ function p_update_centers!{T<:FloatingPoint}(
     end
 end
 
-function local_update_assignments(x, centers, is_init, assignments, costs, counts, to_update, k)        # out: the list of centers get no samples assigned to it
+function local_update_assignments(x, centers, is_init, assignments, costs, counts, to_update, old_to_update, k, dmat_all)        # out: the list of centers get no samples assigned to it
     quote
         l=localpart($x)
         l_is_init = $is_init
         l_to_update = $to_update
         l_centers = $centers
-        dmat = pairwise(SqEuclidean(), l_centers, l)
-        # if l_is_init || $dmat_all
-        #     dmat = pairwise(SqEuclidean(), l_centers, l)
-        # else
-        #     # if only a small subset is affected, only compute for that subset
-        #     affected_inds = find(l_to_update)
-        #     dmat_p = pairwise(SqEuclidean(), l_centers[:, affected_inds], l)
-        #     dmat[affected_inds, :] = dmat_p
-        # end
+        # dmat = pairwise(SqEuclidean(), l_centers, l)
+        if l_is_init || $dmat_all
+            dmat = pairwise(SqEuclidean(), l_centers, l)
+        else
+            # if only a small subset is affected, only compute for that subset
+            affected_inds = find($old_to_update)
+            dmat_p = pairwise(SqEuclidean(), l_centers[:, affected_inds], l)
+            dmat[affected_inds, :] = dmat_p
+        end
         l_assignments = $assignments
         l_costs = $costs
         l_counts = $counts
@@ -144,7 +144,8 @@ function p_update_assignments!{T<:FloatingPoint}(
     costs::Vector{T},           # out: costs of the resultant assignment (n)
     counts::Vector{Int},        # out: number of samples assigned to each cluster (k)
     to_update::Vector{Bool},    # out: whether a center needs update (k)
-    unused::Vector{Int})        # out: the list of centers get no samples assigned to it
+    unused::Vector{Int};
+    dmat_all=false)        # out: the list of centers get no samples assigned to it
 
     k::Int = size(centers, 2)
     n::Int = size(x, 2)
@@ -152,6 +153,7 @@ function p_update_assignments!{T<:FloatingPoint}(
     # re-initialize the counting vector
     fill!(counts, 0)
 
+    old_to_update = copy(to_update)
     if is_init
         fill!(to_update, true)
     else
@@ -174,7 +176,7 @@ function p_update_assignments!{T<:FloatingPoint}(
     #     assignments[range], costs[range], tmp_counts[i,:], tmp_to_update[i,:] = @fetchfrom part eval(op)
     # end
 
-    refs = @sync [ @spawnat part_ids[i] eval(local_update_assignments(x, centers, is_init, assignments[x.indexes[i][2]], costs[x.indexes[i][2]], counts, to_update, k)) for i=1:amount_of_procs ]
+    refs = @sync [ @spawnat part_ids[i] eval(local_update_assignments(x, centers, is_init, assignments[x.indexes[i][2]], costs[x.indexes[i][2]], counts, to_update, old_to_update, k, dmat_all)) for i=1:amount_of_procs ]
     for i=1:length(refs)
         range = x.indexes[i][2]
         assignments[range], costs[range], tmp_counts[i,:], tmp_to_update[i,:] = take!(refs[i])
@@ -254,14 +256,14 @@ function _pkmeans!{T<:FloatingPoint}(
 
         # println("Beyond this point doesn't work!")
 
-        # dmat_all = false
-        # if t == 1 || num_affected > 0.75 * k
-        #     dmat_all = true
-        # end
+        dmat_all = false
+        if t == 1 || num_affected > 0.75 * k
+            dmat_all = true
+        end
 
         # # update assignments
 
-        p_update_assignments!(x, centers, false, assignments, costs, counts, to_update, unused)
+        p_update_assignments!(x, centers, false, assignments, costs, counts, to_update, unused; dmat_all=dmat_all)
         num_affected = sum(to_update) + length(unused)
 
         # compute change of objective and determine convergence
