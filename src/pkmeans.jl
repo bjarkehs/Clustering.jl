@@ -62,7 +62,7 @@ function p_update_centers!{T<:FloatingPoint}(
     results = @sync [ @spawnat part_ids[i] eval(local_p_update_centers(x, centers, cweights, to_update, assignments[x.indexes[i][2]])) for i=1:amount_of_procs ]
 
     for i=1:length(results)
-        tmp_centers[i], tmp_cweights[i,:] = take(results[i])
+        tmp_centers[i], tmp_cweights[i,:] = take!(results[i])
     end
 
     cweights = sum(tmp_cweights,1)
@@ -179,7 +179,7 @@ function p_update_assignments!{T<:FloatingPoint}(
     refs = @sync [ @spawnat part_ids[i] eval(local_update_assignments(x, centers, is_init, assignments[x.indexes[i][2]], costs[x.indexes[i][2]], counts, to_update, old_to_update, k, dmat_all)) for i=1:amount_of_procs ]
     for i=1:length(refs)
         range = x.indexes[i][2]
-        assignments[range], costs[range], tmp_counts[i,:], tmp_to_update[i,:] = take(refs[i])
+        assignments[range], costs[range], tmp_counts[i,:], tmp_to_update[i,:] = take!(refs[i])
     end
 
     counts[:] = sum(tmp_counts, 1)[:]
